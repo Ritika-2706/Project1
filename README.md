@@ -1,8 +1,8 @@
 # PREDICTING THE RISE OF SEA LEVEL BY 2050 USING AI
-# DESCRIPTION
+### DESCRIPTION
 This project seeks to predict sea levels by the year 2050, based on historical data, climate models, and machine learning techniques. The rising sea levels are resulted from three main contributors: melting of polar ice sheets, thermal expansion, and glaciers, which pose an adverse threat to coastal communities, ecosystems, and global infrastructure. Outcomes of this research could be useful directly to policymakers, urban planners, and environmentalists to guide how adaptations could be made for coastal infrastructure and global ventures aimed at combating climate change.
 
-# PROGRAM
+### PROGRAM
 ````
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -45,8 +45,8 @@ plt.legend()
 plt.savefig('sea_level_rise.png')
 plt.show()
 ````
-# OUTPUT
+### OUTPUT
 ![image](https://github.com/user-attachments/assets/46e40fa4-a3bf-41f9-8f1b-bdc5b9e325f1)
-# RESULT
+### RESULT
 The project projects increases in sea levels by 2050 associated with melting ice sheets, thermal expansion, and glacier contributions through the application of Artificial Intelligence and machine learning for accurate predictions.
 
