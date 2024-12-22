@@ -185,13 +185,13 @@ print(future_df)
 <br>
 <img width="500" alt="S4" src="https://github.com/user-attachments/assets/c9cfa43e-a135-4296-9094-69642d1c416c" />
 <br>
-<img width="500" alt="S6" src="https://github.com/user-attachments/assets/321bd780-102a-4ee7-af42-747b78021a8e" />
+<img width="400" alt="S6" src="https://github.com/user-attachments/assets/321bd780-102a-4ee7-af42-747b78021a8e" />
 <br>
-<img width="500" alt="S3" src="https://github.com/user-attachments/assets/0ab8d6c4-aab8-4195-88c0-eb5849870517" />
+<img width="350" alt="S3" src="https://github.com/user-attachments/assets/0ab8d6c4-aab8-4195-88c0-eb5849870517" />
 <br>
-<img width="500" alt="S2" src="https://github.com/user-attachments/assets/cc62580a-1c88-4fa5-906a-78216d980077" />
+<img width="350" alt="S2" src="https://github.com/user-attachments/assets/cc62580a-1c88-4fa5-906a-78216d980077" />
 <br>
-<img width="500" alt="S1" src="https://github.com/user-attachments/assets/96bfed3b-0338-4e66-92f3-ec18a2400f2c" />
+<img width="350" alt="S1" src="https://github.com/user-attachments/assets/96bfed3b-0338-4e66-92f3-ec18a2400f2c" />
 
 
 
