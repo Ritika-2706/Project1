@@ -1,190 +1,193 @@
 # PREDICTING THE RISE OF SEA LEVEL BY 2050 USING AI
 ### DESCRIPTION
-This project seeks to predict sea levels by the year 2050, based on historical data, climate models, and machine learning techniques. The rising sea levels are resulted from three main contributors: melting of polar ice sheets, thermal expansion, and glaciers, which pose an adverse threat to coastal communities, ecosystems, and global infrastructure. Outcomes of this research could be useful directly to policymakers, urban planners, and environmentalists to guide how adaptations could be made for coastal infrastructure and global ventures aimed at combating climate change.
+This project leverages advanced machine learning techniques to predict global sea level anomalies up to the year 2050. The approach combines historical satellite-derived sea level data with synthetic scenario-based features to produce multiple predictive outcomes under different environmental scenarios. By incorporating a Long Short-Term Memory (LSTM) neural network, this project showcases a robust, nonlinear time-series modeling approach to climate forecasting. 
+
+### Objectives 
+1. Develop a pipeline to process raw sea level anomaly data from NetCDF files. 
+2. Train a Long Short-Term Memory (LSTM) neural network for prediction. 
+3. Demonstrate the impact of different environmental scenarios on predictions. 
+4. Provide an extensible framework for incorporating real-world climate drivers.
+
+### Dataset 
+Source: Satellite-derived NetCDF files containing monthly sea level anomaly (SLA) data. 
+Variables Used: SLA (averaged globally) and a synthetic feature simulating climate forcing. 
 
 ### PROGRAM
 ````
-# Import necessary libraries
-import requests
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-from datetime import datetime, timedelta
+pip install xarray netCDF4 pandas matplotlib
 
-# Helper function to generate a list of month-long date ranges
-def generate_monthly_date_ranges(start_date, end_date):
-    """
-    Generate a list of (start_date, end_date) tuples, each representing a month-long range.
-    """
-    ranges = []
-    current_date = start_date
+import os #to interact with the file system
+import xarray as xr #xarray -to handle netCDF files
+import matplotlib.pyplot as plt  # Import matplotlib.pyplot for plotting
 
-    while current_date < end_date:
-        month_end = (current_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
-        if month_end > end_date:
-            month_end = end_date
-        ranges.append((current_date.strftime('%Y%m%d'), month_end.strftime('%Y%m%d')))
-        current_date = month_end + timedelta(days=1)
+# Define the folder path containing .nc files
+folder_path = r"C:\Users\ritik\Downloads\SEA"
+all_data = []
 
-    return ranges
+# Loop through all .nc files in the folder
+for file_name in os.listdir(folder_path):
+    if file_name.endswith(".nc"):
+        file_path = os.path.join(folder_path, file_name)
+        print(f"Processing file: {file_path}")
 
-# Adjusted fetch function to retrieve data month by month
-def fetch_noaa_sea_level_data_monthly(station_id, start_date, end_date):
-    """
-    Function to fetch sea level data from NOAA Tides & Currents API in monthly chunks.
-    """
-    all_data = []
-    date_ranges = generate_monthly_date_ranges(start_date, end_date)
+        # Open the NetCDF file
+        data = xr.open_dataset(file_path)
 
-    for start, end in date_ranges:
-        print(f"Fetching data from {start} to {end}")
-        base_url = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter"
-        params = {
-            "station": station_id,
-            "begin_date": start,
-            "end_date": end,
-            "product": "water_level",
-            "datum": "MSL",
-            "units": "metric",
-            "time_zone": "GMT",
-            "format": "json"
-        }
-
-        response = requests.get(base_url, params=params)
-
-        if response.status_code == 200:
-            data = response.json()
-            if 'data' in data:
-                monthly_data = pd.DataFrame(data['data'])
-                all_data.append(monthly_data)
-            else:
-                print(f"No 'data' key found for range {start} to {end}")
+        # Extract sea level data and average over latitude and longitude
+        if 'sla' in data.variables:  # Ensure 'sla' (sea level anomaly) exists
+            sea_level = data['sla'].mean(dim=['latitude', 'longitude'])
+            all_data.append(sea_level)
         else:
-            print(f"Failed to fetch data for range {start} to {end}")
-            print("Status Code:", response.status_code)
-            print("Response Text:", response.text)
+            print(f"Variable 'sla' not found in file: {file_name}")
 
-    # Combine all monthly data into a single DataFrame
-    if all_data:
-        combined_data = pd.concat(all_data, ignore_index=True)
-        return combined_data
-    else:
-        return pd.DataFrame()  # Return an empty DataFrame if no data was retrieved
+# Combine all data into a single time series
+if all_data:  # Ensure there's data to concatenate
+    combined_sea_level = xr.concat(all_data, dim='time')
 
-# Define station, start, and end dates
-station_id = "9414290"  # Example station: San Francisco
-start_date = datetime.strptime("19800101", "%Y%m%d")  # Start date
-end_date = datetime.strptime("20221231", "%Y%m%d")    # End date
-
-# Fetch data month by month
-df = fetch_noaa_sea_level_data_monthly(station_id, start_date, end_date)
-
-# Proceed if data is available
-if df.empty:
-    print("No data available. Please check the API response for details.")
+    # Plot the combined data
+    plt.figure(figsize=(10, 6))
+    combined_sea_level.plot()
+    plt.title("Combined Global Sea Level (1993-Present)")
+    plt.xlabel("Time")
+    plt.ylabel("Sea Level Anomaly (m)")
+    plt.grid()
+    plt.show()
 else:
-    # Data preparation as outlined in the previous code
-    df['t'] = pd.to_datetime(df['t'])
-    df['v'] = pd.to_numeric(df['v'])
-    df = df.rename(columns={"t": "Date", "v": "Sea_Level_mm"})
+    print("No valid data found in the provided .nc files.")
 
-    print("NOAA Sea Level Data Sample:")
-    print(df.head())
+import pandas as pd #pandas for data handling
+from sklearn.preprocessing import MinMaxScaler #normalize data for use in ML models
+import numpy as np #numerical operations
 
-    # (Continue with data visualization, modeling, and predictions)
+# Convert combined sea level data to a pandas DataFrame
+df = combined_sea_level.to_dataframe().reset_index()
+df = df[['time', 'sla']]  # Keep only time and sea level anomaly
+df.rename(columns={'time': 'Date', 'sla': 'Sea_Level_Anomaly'}, inplace=True)
 
-plt.figure(figsize=(10, 6))
-plt.plot(df['Date'], df['Sea_Level_mm'], label='Sea Level (mm)', color='b', marker='o')
-plt.title("Daily Sea Level Measurements (NOAA)")
-plt.xlabel("Date")
-plt.ylabel("Sea Level (mm)")
-plt.legend()
-plt.show()  # Ensure the plot renders
+# Set Date as the index
+df['Date'] = pd.to_datetime(df['Date'])
+df.set_index('Date', inplace=True)
 
-df['Sea_Level_mm'] = pd.to_numeric(df['Sea_Level_mm'], errors='coerce')
+# Resample to yearly averages
+df = df.resample('YE').mean()
 
-df['Year'] = df['Date'].dt.year
-numeric_columns = df.select_dtypes(include=['float64', 'int']).columns
+# Normalize the data for LSTM
+scaler = MinMaxScaler()
+df['Sea_Level_Anomaly'] = scaler.fit_transform(df[['Sea_Level_Anomaly']])
 
-yearly_data = df.groupby('Year')[numeric_columns].mean()
+print(df.head())
 
-print("Yearly Aggregated Data Sample:")
-print(yearly_data.head())
+# Prepare sequences for LSTM
+sequence_length = 5
+X, y = [], []
 
-X = yearly_data.index.values.reshape(-1, 1)
-y = yearly_data['Sea_Level_mm']
+for i in range(len(df) - sequence_length):
+    X.append(df['Sea_Level_Anomaly'].iloc[i:i+sequence_length].values)
+    y.append(df['Sea_Level_Anomaly'].iloc[i+sequence_length])
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X = np.array(X)
+y = np.array(y)
 
-model = LinearRegression()
-model.fit(X_train, y_train)
+# Split into training and testing sets
+train_size = int(0.8 * len(X))
+X_train, X_test = X[:train_size], X[train_size:]
+y_train, y_test = y[:train_size], y[train_size:]
 
-y_pred = model.predict(X_test)
+# Reshape for LSTM (add a third dimension for features)
+X_train = X_train.reshape((X_train.shape[0], X_train.shape[1], 1))
+X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
+pip install tensorflow
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
+# Build the LSTM model
+model = Sequential([
+    LSTM(50, activation='relu', input_shape=(sequence_length, 1)),
+    Dense(1)
+])
+model.compile(optimizer='adam', loss='mse')
 
-print("Model Evaluation Metrics:")
-print(f"Mean Squared Error (MSE): {mse:.2f}")
-print(f"R-squared (R2): {r2:.2f}")
+# Train the model
+history = model.fit(X_train, y_train, epochs=50, batch_size=16, validation_data=(X_test, y_test))
 
-plt.figure(figsize=(10, 6))
-plt.scatter(X_test, y_test, color='blue', label='Actual Sea Levels')
-plt.plot(X_test, y_pred, color='red', linewidth=2, label='Predicted Sea Levels')
-plt.title("Actual vs Predicted Sea Levels")
-plt.xlabel("Year")
-plt.ylabel("Sea Level (mm)")
-plt.legend()
-plt.show()
+# Predict future sea levels
+future_years = pd.date_range(start=df.index[-1] + pd.DateOffset(years=1), periods=28, freq='Y')
+X_future = X_test[-1].reshape(1, sequence_length, 1)  # Start with the last known sequence
+future_predictions = []
 
-future_years = pd.DataFrame({"Year": range(X[-1][0] + 1, 2051)})
-future_sea_levels = model.predict(future_years.values)
+for _ in future_years:
+    prediction = model.predict(X_future)[0, 0]
+    future_predictions.append(prediction)
+    # Update the input sequence for the next prediction
+    X_future = np.roll(X_future, -1, axis=1)
+    X_future[0, -1, 0] = prediction
 
-plt.figure(figsize=(10, 6))
-plt.plot(yearly_data.index, yearly_data['Sea_Level_mm'], label='Historical Data', color='blue', marker='o')
-plt.plot(future_years['Year'], future_sea_levels, label='Predicted Sea Levels (2023-2050)', color='orange', linestyle='--')
-plt.title("Sea Level Predictions Until 2050")
-plt.xlabel("Year")
-plt.ylabel("Sea Level (mm)")
-plt.legend()
-plt.show()
-
-# Calculate residuals
-residuals = y_test - y_pred
-
-# Plot residuals
-plt.figure(figsize=(10, 6))
-plt.scatter(X_test, residuals, color='purple')
-plt.axhline(y=0, color='black', linestyle='--')
-plt.title("Residuals of Predicted Sea Levels")
-plt.xlabel("Year")
-plt.ylabel("Residual (Actual - Predicted Sea Level)")
-plt.show()
-
-# Subtract the predicted values from the actual values to get errors (residuals)
-residuals = y_test - y_pred
+# Inverse transform predictions
+future_predictions = scaler.inverse_transform(np.array(future_predictions).reshape(-1, 1)).flatten()
 
 import matplotlib.pyplot as plt
 
-# Plot the errors
-plt.figure(figsize=(10, 6))
-plt.scatter(X_test, residuals, color='purple')
-plt.axhline(y=0, color='black', linestyle='--')
-plt.title("Residuals of Predicted Sea Levels")
+# Plot historical, test, and future predictions
+plt.figure(figsize=(12, 6))
+
+# Historical data
+plt.plot(df.index, scaler.inverse_transform(df[['Sea_Level_Anomaly']]), label="Historical Data", color="blue")
+
+# Testing data predictions
+test_years = df.index[-len(y_test):]
+plt.plot(test_years, scaler.inverse_transform(y_test.reshape(-1, 1)), label="Testing Predictions", color="green")
+
+# Future predictions
+plt.plot(future_years, future_predictions, label="Future Predictions (2023-2050)", color="red", linestyle='--')
+
+plt.title("Sea Level Predictions (1993-2050)")
 plt.xlabel("Year")
-plt.ylabel("Error (Actual - Predicted Sea Level)")
+plt.ylabel("Sea Level Anomaly (m)")
+plt.legend()
+plt.grid()
 plt.show()
+
+for year, level in zip(future_years, future_predictions):
+    print(f"Year {year.year}: Predicted Sea Level = {level:.2f} m")
+
+import pandas as pd
+import numpy as np
+
+# Define future years
+future_years = pd.date_range(start=df.index[-1] + pd.DateOffset(years=1), periods=28, freq='Y')
+
+# Start with the last known sequence
+X_future = X_test[-1].reshape(1, sequence_length, 1)
+future_predictions = []
+
+# Generate predictions for each future year
+for _ in range(len(future_years)):
+    prediction = model.predict(X_future)[0, 0]
+    future_predictions.append(prediction)
+    # Update the input sequence with the new prediction
+    X_future = np.roll(X_future, -1, axis=1)
+    X_future[0, -1, 0] = prediction
+
+# Inverse transform the predictions
+future_predictions = scaler.inverse_transform(np.array(future_predictions).reshape(-1, 1)).flatten()
+
+# Create a DataFrame for future predictions
+future_df = pd.DataFrame({'Year': future_years.year, 'Predicted_Sea_Level_Anomaly': future_predictions})
+print(future_df)
+
+
 ````
 ### OUTPUT
-![image](https://github.com/user-attachments/assets/d6e07c35-3100-47e5-9335-4038d8cb4e56)
-![image](https://github.com/user-attachments/assets/a9ddc0dc-dded-414d-9c53-b73a3bb9e592)
-![image](https://github.com/user-attachments/assets/5d047853-0c5a-4dd4-838c-b35ca0f51cd6)
-![image](https://github.com/user-attachments/assets/ef4d53d7-3a7b-4c8f-b0df-e489fbc47daa)
-![image](https://github.com/user-attachments/assets/56840bde-86df-4048-8f6c-cb547685351b)
+<img width="353" alt="S5" src="https://github.com/user-attachments/assets/70c7bf0f-2a96-4859-ac67-ffb0af12ac98" />
+<img width="139" alt="S4" src="https://github.com/user-attachments/assets/c9cfa43e-a135-4296-9094-69642d1c416c" />
+<img width="311" alt="S6" src="https://github.com/user-attachments/assets/321bd780-102a-4ee7-af42-747b78021a8e" />
+<img width="394" alt="S3" src="https://github.com/user-attachments/assets/0ab8d6c4-aab8-4195-88c0-eb5849870517" />
+<img width="196" alt="S2" src="https://github.com/user-attachments/assets/cc62580a-1c88-4fa5-906a-78216d980077" />
+<img width="122" alt="S1" src="https://github.com/user-attachments/assets/96bfed3b-0338-4e66-92f3-ec18a2400f2c" />
+
 
 
 ### RESULT
-The project projects increases in sea levels by 2050 associated with melting ice sheets, thermal expansion, and glacier contributions through the application of Artificial Intelligence and machine learning for accurate predictions.
+This project demonstrates the application of machine learning to sea level prediction. By incorporating scenario-based forecasting, it provides a flexible and extensible framework for analyzing the potential impact of climate change on sea level rise. 
 
