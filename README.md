@@ -181,7 +181,8 @@ print(future_df)
 ````
 ### OUTPUT
 
-<img width="500" alt="S5" src="https://github.com/user-attachments/assets/70c7bf0f-2a96-4859-ac67-ffb0af12ac98" />
+<img width="500" alt="S5" src="https://github.com/user-attachments/assets/57c4136d-04df-4113-9c17-9ccec08e5a21" />
+
 <br>
 <img width="500" alt="S4" src="https://github.com/user-attachments/assets/c9cfa43e-a135-4296-9094-69642d1c416c" />
 <br>
