@@ -10,6 +10,7 @@ This project leverages advanced machine learning techniques to predict global se
 
 ### Dataset 
 Source: Satellite-derived NetCDF files containing monthly sea level anomaly (SLA) data. 
+
 Variables Used: SLA (averaged globally) and a synthetic feature simulating climate forcing. 
 
 ### PROGRAM
